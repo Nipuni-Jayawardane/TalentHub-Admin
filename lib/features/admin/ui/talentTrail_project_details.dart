@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:slt_internship_attendance_portal/features/admin/api/talentTrail_admin_api.dart';
+import 'package:slt_internship_attendance_portal/features/admin/api/talent_trail_admin_api.dart';
 import 'package:slt_internship_attendance_portal/features/admin/ui/talentTrail_team_details.dart';
 
 class ProjectMember {
@@ -145,7 +145,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       });
 
       // Load assigned teams
-      await _loadAssignedTeams();
+      _loadAssignedTeams();
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -267,6 +267,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       final start = DateTime.parse(startDate);
       final end = DateTime.parse(targetDate);
       final days = end.difference(start).inDays;
+      if (days < 0) return 'Invalid timeline';
       final weeks = days ~/ 7;
       final remainingDays = days % 7;
       return '$weeks weeks, $remainingDays days';
@@ -280,18 +281,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     try {
       final date = DateTime.parse(dateString);
       const months = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
       ];
       return '${months[date.month - 1]} ${date.day}, ${date.year}';
     } catch (e) {
@@ -302,7 +293,23 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('Project Details', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.go('/talenttrail-projects'),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -319,204 +326,31 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   Widget _buildContent() {
     final project = _project!;
-    final formattedStartDate = _formatDate(project.startDate);
-    final formattedTargetDate = _formatDate(project.targetDate);
-    final duration = _calculateDuration(project.startDate, project.targetDate);
 
     return Stack(
       children: [
         SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 720),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Back bar
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: InkWell(
-                      onTap: () => context.go('/talenttrail-projects'),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.arrow_back, size: 20, color: Colors.grey),
-                          SizedBox(width: 8),
-                          Text('Back', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Action buttons
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _ActionBtn(
-                          bg: const Color(0xFF4169E1),
-                          label: 'Edit Project',
-                          icon: Icons.edit,
-                          onTap: () => setState(() => isEditOpen = true),
-                        ),
-                        _ActionBtn(
-                          bg: const Color(0xFF10B981),
-                          label: 'Export Project',
-                          icon: Icons.file_download,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Export Project clicked'),
-                              ),
-                            );
-                          },
-                        ),
-                        _ActionBtn(
-                          bg: const Color(0xFFDC3545),
-                          label: 'Delete Project',
-                          icon: Icons.delete,
-                          onTap: _deleteProject,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Project Header
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8EAF6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          project.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            color: Color(0xFF2C3E50),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _StatusPill(status: project.status),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Project Description
-                  _Card(
-                    title: 'Project Description',
-                    child: Text(
-                      project.description,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-
-                  // Timeline
-                  _Card(
-                    title: 'Timeline',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _kv('Start Date:', formattedStartDate),
-                        _kv('Target Date:', formattedTargetDate),
-                        _kv('Duration:', duration),
-                        _kv(
-                          'Meeting Day:',
-                          project.meetingDay.isEmpty
-                              ? 'Not set'
-                              : project.meetingDay,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Supervisor Information
-                  _Card(
-                    title: 'Supervisor Information',
-                    child: _kv(
-                      'Supervisor:',
-                      project.supervisorName.isEmpty
-                          ? 'Not assigned'
-                          : project.supervisorName,
-                    ),
-                  ),
-
-                  // Assigned Teams
-                  _Card(
-                    title: 'Assigned Teams (${_assignedTeams.length})',
-                    child: _isLoadingTeams
-                        ? const Center(child: CircularProgressIndicator())
-                        : _assignedTeams.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.all(32),
-                            child: Center(
-                              child: Text(
-                                'No teams assigned',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ),
-                          )
-                        : Column(
-                            children: _assignedTeams
-                                .map((team) => _TeamCard(team: team))
-                                .toList(),
-                          ),
-                  ),
-
-                  // Project Documentation
-                  _Card(
-                    title: 'Project Documentation',
-                    child: Column(
-                      children: project.documents
-                          .map((d) => _DocUploadCard(doc: d))
-                          .toList(),
-                    ),
-                  ),
-
-                  // Repository Information
-                  _Card(
-                    title: 'Repository Information',
-                    child: Row(
-                      children: [
-                        const Text('📁', style: TextStyle(fontSize: 18)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            project.repository ?? 'No repository configured',
-                            style: TextStyle(
-                              color: project.repository != null
-                                  ? const Color(0xFF2C3E50)
-                                  : Colors.grey,
-                              fontStyle: project.repository == null
-                                  ? FontStyle.italic
-                                  : FontStyle.normal,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                ],
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildActionButtons(),
+              const SizedBox(height: 16),
+              _buildTitleCard(project),
+              const SizedBox(height: 16),
+              _buildSectionCard('Project Description', _buildDescription(project)),
+              _buildSectionCard('Timeline', _buildTimeline(project)),
+              _buildSectionCard(
+                'PM & Team Assignments (${1 + _assignedTeams.fold<int>(0, (count, team) => count + team.members.length)})',
+                _buildPMAndTeamAssignments(project),
               ),
-            ),
+              _buildSectionCard('Project Documentation', _buildDocumentation(project)),
+              _buildSectionCard('Project Repository Information', _buildProjectRepositoryInfo(project)),
+              _buildSectionCard('Commit Activity Heatmap', _buildCommitActivityHeatmap()),
+              const SizedBox(height: 40),
+            ],
           ),
         ),
-
-        // Edit Dialog
         if (isEditOpen && _project != null)
           ProjectEditDialog(
             project: _project!,
@@ -530,76 +364,349 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-  Widget _kv(String k, String v, {Color? valueColor}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildActionButtons() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _ActionBtn(
+          bg: const Color(0xFF3B82F6),
+          label: 'Edit Project',
+          icon: Icons.edit,
+          onTap: () => setState(() => isEditOpen = true),
+        ),
+        _ActionBtn(
+          bg: const Color(0xFF10B981),
+          label: 'Export Project',
+          icon: Icons.file_download,
+          onTap: () {},
+        ),
+        _ActionBtn(
+          bg: const Color(0xFFEF4444),
+          label: 'Delete Project',
+          icon: Icons.delete,
+          onTap: _deleteProject,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTitleCard(ProjectDetailModel project) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(k, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(
-            v,
-            style: TextStyle(color: valueColor ?? const Color(0xFF2C3E50)),
+          Expanded(
+            child: Text(
+              project.name.isNotEmpty ? project.name : 'Unnamed Project',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade100,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              project.status.toUpperCase(),
+              style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
+            ),
           ),
         ],
       ),
     );
   }
-}
 
-class _ErrorView extends StatelessWidget {
-  final String error;
-  final VoidCallback onRetry;
-  final VoidCallback onBack;
-
-  const _ErrorView({
-    required this.error,
-    required this.onRetry,
-    required this.onBack,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
+  Widget _buildSectionCard(String title, Widget content) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
-            onTap: () => context.go('/talenttrail-projects'),
-            child: Row(
-              children: const [
-                Icon(Icons.arrow_back, size: 20, color: Colors.grey),
-                SizedBox(width: 8),
-                Text('Back', style: TextStyle(color: Colors.grey)),
-              ],
-            ),
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          const SizedBox(height: 16),
+          content,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDescription(ProjectDetailModel project) {
+    return Text(
+      project.description.isEmpty ? 'No description provided.' : project.description,
+      style: const TextStyle(color: Color(0xFF475569), height: 1.5, fontSize: 15),
+    );
+  }
+
+  Widget _buildTimeline(ProjectDetailModel project) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTimelineRow('Start Date', _formatDate(project.startDate)),
+        const SizedBox(height: 12),
+        _buildTimelineRow('Target Date', _formatDate(project.targetDate)),
+        const SizedBox(height: 12),
+        _buildTimelineRow('Duration', _calculateDuration(project.startDate, project.targetDate)),
+        const SizedBox(height: 12),
+        _buildTimelineRow('Meeting Day', project.meetingDay.isNotEmpty ? project.meetingDay : 'Not configured'),
+      ],
+    );
+  }
+
+  Widget _buildTimelineRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500, fontSize: 14)),
+        ),
+        Expanded(
+          child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B), fontSize: 14)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPMAndTeamAssignments(ProjectDetailModel project) {
+    if (_isLoadingTeams) {
+      return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
+            child: const Icon(Icons.workspace_premium, color: Colors.white, size: 20),
           ),
-          const SizedBox(height: 60),
-          Center(
-            child: Column(
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                const Text(
-                  'Error loading project details',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Text(error, textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: onRetry,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4169E1),
-                  ),
-                  child: const Text('Retry'),
-                ),
-              ],
+          title: const Text('Project Manager', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+          subtitle: Text(project.supervisorName.isNotEmpty ? project.supervisorName : 'Not assigned', style: TextStyle(color: Colors.grey.shade600)),
+        ),
+        
+        if (_assignedTeams.isEmpty)
+           const Padding(
+             padding: EdgeInsets.only(top: 16),
+             child: Text('No teams assigned', style: TextStyle(color: Colors.grey)),
+           ),
+
+        ..._assignedTeams.expand((team) => [
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+              child: const Icon(Icons.people, color: Colors.white, size: 20),
             ),
+            title: Text(team.name, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+          ),
+          ...team.members.map((member) => ListTile(
+            contentPadding: const EdgeInsets.only(left: 16),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle),
+              child: Icon(Icons.person, color: Colors.grey.shade700, size: 18),
+            ),
+            title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF1E293B))),
+            subtitle: Text(member.role, style: TextStyle(color: Colors.grey.shade600)),
+          )),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildDocumentation(ProjectDetailModel project) {
+    return Column(
+      children: project.documents.map((doc) => _buildDocCard(doc)).toList(),
+    );
+  }
+
+  Widget _buildDocCard(ProjectDoc doc) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.description_outlined, color: Colors.blue.shade600, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(doc.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 2),
+                    Text(doc.fullName, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(doc.format, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.upload_file, size: 18),
+              label: Text('Upload ${doc.name}'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3B82F6),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectRepositoryInfo(ProjectDetailModel project) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        _buildRepoInfoCard('HOST:', Icons.cloud_outlined, 'GitHub'),
+        _buildRepoInfoCard('REPOSITORY:', Icons.folder_outlined, project.repository ?? 'Lakindu24/TalentHub'),
+        _buildRepoInfoCard('ACCESS TOKEN:', Icons.lock_outline, 'Configured'),
+      ],
+    );
+  }
+
+  Widget _buildRepoInfoCard(String label, IconData icon, String value) {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(icon, size: 18, color: Colors.blueGrey),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1E293B)), overflow: TextOverflow.ellipsis),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCommitActivityHeatmap() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('All Contributors', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_drop_down, size: 16),
+                ],
+              ),
+            )
+          ],
+        ),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(52, (week) => Padding(
+              padding: const EdgeInsets.only(right: 2),
+              child: Column(
+                children: List.generate(7, (day) {
+                  int intensity = (week * 7 + day) % 11;
+                  Color c;
+                  if (intensity < 4) c = Colors.grey.shade100;
+                  else if (intensity < 6) c = Colors.blue.shade100;
+                  else if (intensity < 8) c = Colors.blue.shade300;
+                  else if (intensity < 10) c = Colors.blue.shade500;
+                  else c = Colors.blue.shade700;
+                  return Container(
+                    width: 12, height: 12, margin: const EdgeInsets.only(bottom: 2),
+                    decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)),
+                  );
+                }),
+              ),
+            )),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            const Text('Less', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(width: 6),
+            Container(width: 12, height: 12, decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 4),
+            Container(width: 12, height: 12, decoration: BoxDecoration(color: Colors.blue.shade100, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 4),
+            Container(width: 12, height: 12, decoration: BoxDecoration(color: Colors.blue.shade300, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 4),
+            Container(width: 12, height: 12, decoration: BoxDecoration(color: Colors.blue.shade500, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 4),
+            Container(width: 12, height: 12, decoration: BoxDecoration(color: Colors.blue.shade700, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 6),
+            const Text('More', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -623,251 +730,50 @@ class _ActionBtn extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: bg,
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       onPressed: onTap,
-      icon: Icon(icon, size: 16),
-      label: Text(label, style: const TextStyle(fontSize: 13)),
+      icon: Icon(icon, size: 18),
+      label: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
     );
   }
 }
 
-class _StatusPill extends StatelessWidget {
-  final String status;
-  const _StatusPill({required this.status});
+class _ErrorView extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+  final VoidCallback onBack;
 
-  @override
-  Widget build(BuildContext context) {
-    final statusUpper = status.toUpperCase();
-    Color bg;
-    Color fg;
-
-    switch (statusUpper) {
-      case 'PLANNED':
-        bg = const Color(0xFFDBEAFE);
-        fg = const Color(0xFF1E40AF);
-        break;
-      case 'IN_PROGRESS':
-        bg = const Color(0xFFFEF3C7);
-        fg = const Color(0xFFF59E0B);
-        break;
-      case 'COMPLETED':
-        bg = const Color(0xFFC8E6C9);
-        fg = const Color(0xFF2E7D32);
-        break;
-      case 'ON_HOLD':
-        bg = const Color(0xFFFFCDD2);
-        fg = const Color(0xFFC62828);
-        break;
-      default:
-        bg = const Color(0xFFE0E0E0);
-        fg = const Color(0xFF616161);
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(status, style: TextStyle(fontSize: 13, color: fg)),
-    );
-  }
-}
-
-class _Card extends StatelessWidget {
-  final String title;
-  final Widget child;
-
-  const _Card({
-    required this.title,
-    required this.child,
+  const _ErrorView({
+    required this.error,
+    required this.onRetry,
+    required this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            title,
-            textAlign: TextAlign.left,
-            style: const TextStyle(fontSize: 18, color: Color(0xFF2C3E50)),
+          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+          const SizedBox(height: 16),
+          const Text(
+            'Error loading project details',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _TeamCard extends StatelessWidget {
-  final ProjectTeam team;
-  const _TeamCard({required this.team});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TeamDetailScreen(teamId: team.teamId),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF10B981),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.group, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    team.name,
-                    style: const TextStyle(
-                      color: Color(0xFF2C3E50),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          Text(error, textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: onRetry,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4169E1),
+              foregroundColor: Colors.white,
             ),
-            const SizedBox(height: 16),
-            Column(
-              children: team.members.map((m) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          m.avatar,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              m.name,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF2C3E50),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              m.role,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DocUploadCard extends StatelessWidget {
-  final ProjectDoc doc;
-  const _DocUploadCard({required this.doc});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 2),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.description_outlined,
-            size: 48,
-            color: Colors.grey.shade300,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            doc.name,
-            style: const TextStyle(fontSize: 18, color: Color(0xFF2C3E50)),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            doc.fullName,
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            doc.format,
-            style: const TextStyle(fontSize: 11, color: Color(0xFFBDBDBD)),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4169E1),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Upload ${doc.name} clicked')),
-                );
-              },
-              icon: const Icon(Icons.upload, size: 16),
-              label: Text('Upload ${doc.name}'),
-            ),
+            child: const Text('Retry'),
           ),
         ],
       ),

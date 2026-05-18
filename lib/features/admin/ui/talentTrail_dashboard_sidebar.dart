@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'talentTrail_qa_devops_screen.dart';
+import 'talentTrail_certificates_screen.dart';
+import 'talentTrail_help_requests_screen.dart';
 
 class TalentTrailSidebar extends StatelessWidget {
   final bool isOpen;
@@ -37,8 +40,12 @@ class TalentTrailSidebar extends StatelessWidget {
               children: [
                 const SizedBox(height: 20),
 
-                // Menu buttons
-                buildMenuButton(
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        // Menu buttons
+                        buildMenuButton(
                   context: context,
                   icon: LucideIcons.home,
                   label: 'Home',
@@ -49,6 +56,20 @@ class TalentTrailSidebar extends StatelessWidget {
                   icon: LucideIcons.user,
                   label: 'Interns',
                   route: '/talenttrail-interns',
+                ),
+                buildMenuButton(
+                  context: context,
+                  icon: Icons.show_chart_rounded,
+                  label: 'QA & DevOps',
+                  onTap: () {
+                    onClose();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TalentTrailQaDevopsScreen(),
+                      ),
+                    );
+                  },
                 ),
                 buildMenuButton(
                   context: context,
@@ -76,16 +97,64 @@ class TalentTrailSidebar extends StatelessWidget {
                 ),
                 buildMenuButton(
                   context: context,
+                  icon: Icons.support_agent_rounded,
+                  label: 'Help Requests',
+                  onTap: () {
+                    onClose();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TalentTrailHelpRequestsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                buildMenuButton(
+                  context: context,
+                  icon: Icons.workspace_premium_outlined,
+                  label: 'Certificates',
+                  onTap: () {
+                    onClose();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TalentTrailCertificatesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                buildMenuButton(
+                  context: context,
                   icon: LucideIcons.settings,
                   label: 'Settings',
                   route: '/talenttrail-settings',
                 ),
                 buildMenuButton(
                   context: context,
+                  icon: Icons.grid_view_rounded,
+                  label: 'Back to Talenthub',
+                  onTap: () {
+                    // Close the sidebar drawer state overlay
+                    onClose();
+                    // Direct route navigation to the main admin dashboard
+                    context.go('/admin-dashboard');
+                  },
+                ),
+                buildMenuButton(
+                  context: context,
                   icon: LucideIcons.logOut,
                   label: 'Logout',
-                  route: '/admin-dashboard',
                   color: Colors.redAccent,
+                  onTap: () {
+                    // Standard Logout logic
+                    onClose();
+                    // AuthService.logout() implementation here if needed
+                    context.go('/admin-dashboard');
+                  },
+                ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -99,12 +168,15 @@ class TalentTrailSidebar extends StatelessWidget {
     required BuildContext context,
     required IconData icon,
     required String label,
-    required String route,
+    String? route,
     Color color = Colors.white,
+    VoidCallback? onTap,
   }) {
     return InkWell(
-      onTap: () {
-        context.go(route); // Use GoRouter for navigation
+      onTap: onTap ?? () {
+        if (route != null) {
+          context.go(route); // Use GoRouter for navigation
+        }
         onClose();
       },
       child: Container(

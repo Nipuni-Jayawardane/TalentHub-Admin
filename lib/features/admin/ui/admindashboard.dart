@@ -8,6 +8,7 @@ import 'package:slt_internship_attendance_portal/features/admin/api/admin_api.da
 import 'package:slt_internship_attendance_portal/features/admin/ui/admin_login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slt_internship_attendance_portal/features/admin/ui/intern_location_screen.dart';
+import 'package:slt_internship_attendance_portal/features/admin/ui/meeting_attendance_screen.dart';
 import 'package:slt_internship_attendance_portal/features/admin/ui/short_leave_screen.dart';
 import 'package:slt_internship_attendance_portal/features/admin/ui/admin_daily_records.dart';
 import 'package:slt_internship_attendance_portal/features/admin/ui/overdue_list.dart';
@@ -17,11 +18,13 @@ import 'package:slt_internship_attendance_portal/features/admin/providers/dashbo
 import 'package:slt_internship_attendance_portal/features/admin/ui/home_bottom_navigation_bar.dart';
 import 'package:go_router/go_router.dart';
 
+// ----------------------------------------------------------------------
+// New AppHeader matching the requested UI (Logo on left, Logout on right)
+// ----------------------------------------------------------------------
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
-  final String subtitle;
   final VoidCallback onLogout;
 
-  const AppHeader({super.key, required this.subtitle, required this.onLogout});
+  const AppHeader({super.key, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -31,32 +34,37 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
       toolbarHeight: 70,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'SLT Admin Portal',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+      leadingWidth: 200,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 16.0, top: 12, bottom: 12),
+        // Placeholder for SLT Mobitel logo. Replace with exact asset path if different.
+        child: Image.asset(
+          'assets/images/slt_mobitel_logo.png', // Ensure this asset is in pubspec.yaml
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
+          errorBuilder: (context, error, stackTrace) => const Text(
+            'SLT MOBITEL',
+            style: TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
+        ),
       ),
       actions: [
         Container(
           margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: IconButton(
-            icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
+            icon: const Icon(
+              Icons.logout_rounded,
+              color: AppColors.danger,
+              size: 20,
+            ),
             onPressed: onLogout,
             tooltip: 'Logout',
           ),
@@ -73,6 +81,9 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(70);
 }
 
+// ----------------------------------------------------------------------
+// Redesigned StatCard to match the new 2x2 grid UI
+// ----------------------------------------------------------------------
 class StatCard extends StatelessWidget {
   final String label;
   final String value;
@@ -92,48 +103,46 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+            color: Color(0x05000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(height: 22),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: valueColor ?? AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: valueColor ?? AppColors.textPrimary,
+                ),
+              ),
+              Icon(icon, color: iconColor, size: 22),
+            ],
           ),
         ],
       ),
@@ -141,10 +150,12 @@ class StatCard extends StatelessWidget {
   }
 }
 
+// ----------------------------------------------------------------------
+// Redesigned QuickActionCard (Centered icon and text)
+// ----------------------------------------------------------------------
 class QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
   final Color iconColor;
   final Color cardColor;
   final VoidCallback onTap;
@@ -153,7 +164,6 @@ class QuickActionCard extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
     required this.iconColor,
     required this.cardColor,
     required this.onTap,
@@ -164,41 +174,22 @@ class QuickActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(height: 12),
+            Icon(icon, color: iconColor, size: 24),
+            const SizedBox(height: 8),
             Text(
               title,
+              textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textSecondary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -224,6 +215,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearchLoading = false;
   int _selectedIndex = 0;
+
+  // State for toggling the exports section
+  bool _isExportsExpanded = false;
 
   final List<String> _statusOptions = [
     'All Status',
@@ -648,32 +642,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-
-  Widget _buildSectionHeader(String title, String subtitle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ShaderMask(
-          shaderCallback: (bounds) =>
-              AppColors.headingGradient.createShader(bounds),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-        ),
-      ],
-    );
-  }
-
   void _showSnackbar(String message, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -691,9 +659,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     List<Map<String, dynamic>> filtered = List.from(provider.internReports);
 
     if (_statusFilter != 'All Status') {
-      // Implement your filtering logic here
       filtered = filtered.where((intern) {
-        return true;
+        return true; // Implement actual filter logic here
       }).toList();
     }
 
@@ -720,445 +687,316 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Consumer<DashboardProvider>(
       builder: (context, provider, child) {
         return Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: AppHeader(subtitle: 'Dashboard', onLogout: _handleLogout),
-          body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFE8F4FD), Color(0xFFF0F4F8)],
-              ),
-            ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Welcome Banner
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFBFDBFE),
-                        width: 1.2,
+          backgroundColor: const Color(
+            0xFFF0F8FF,
+          ), // Light blue background from UI
+          appBar: AppHeader(onLogout: _handleLogout),
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Header Section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Intern Management',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(
+                            0xFF65B2E8,
+                          ), // Matching the light blue text
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Color(0xFFDBEAFE),
-                          child: Icon(
-                            Icons.person_rounded,
-                            color: Color(0xFF2563EB),
-                            size: 24,
-                          ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Monitor and manage intern logbook submissions',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
                         ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Stats Grid (2x2)
+                      if (provider.isLoading)
+                        const Center(child: CircularProgressIndicator())
+                      else
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: isTablet ? 2.5 : 1.7,
                           children: [
-                            const Text(
-                              'Welcome back,',
-                              style: TextStyle(
-                                fontSize: 12,
+                            StatCard(
+                              label: 'Total Interns',
+                              value: provider.totalInterns.toString(),
+                              icon: Icons.groups_rounded,
+                              iconColor: AppColors.statBlue,
+                            ),
+                            StatCard(
+                              label: 'Submitted Interns',
+                              value: provider.submittedInterns.toString(),
+                              icon: Icons.check_circle_rounded,
+                              iconColor: AppColors.statGreen,
+                              valueColor: AppColors.statGreen,
+                            ),
+                            StatCard(
+                              label: 'Overdue Interns',
+                              value: provider.overdueInterns.toString(),
+                              icon: Icons.warning_rounded,
+                              iconColor: AppColors.statOrange,
+                              valueColor: AppColors.danger,
+                            ),
+                            StatCard(
+                              label: 'Total Records',
+                              value: provider.totalRecords.toString(),
+                              icon: Icons.list_alt_rounded,
+                              iconColor: AppColors.statPurple,
+                              valueColor: AppColors.statPurple,
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+
+                // White Container for Quick Actions & Exports
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'QUICK ACTIONS',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textHint,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Quick Actions Grid
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: isTablet ? 4 : 3,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.0, // Square cards
+                        children: [
+                          QuickActionCard(
+                            icon: Icons.calendar_today_rounded,
+                            title: 'Daily Records',
+                            iconColor: AppColors.statGreen,
+                            cardColor: AppColors.statGreen.withOpacity(0.1),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const DailyRecordsScreen(),
+                              ),
+                            ),
+                          ),
+                          QuickActionCard(
+                            icon: Icons.directions_run_rounded,
+                            title: 'Leave Requests',
+                            iconColor: AppColors.statPurple,
+                            cardColor: AppColors.statPurple.withOpacity(0.1),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ShortLeaveScreen(),
+                              ),
+                            ),
+                          ),
+                          QuickActionCard(
+                            icon: Icons.access_time_filled_rounded,
+                            title: 'Overdue List',
+                            iconColor: AppColors.statOrange,
+                            cardColor: AppColors.statOrange.withOpacity(0.1),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const OverdueListScreen(),
+                              ),
+                            ),
+                          ),
+                          QuickActionCard(
+                            icon: Icons.chair_rounded,
+                            title: 'Seat Layout',
+                            iconColor: Colors.pink,
+                            cardColor: Colors.pink.withOpacity(0.1),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SeatManagementScreen(),
+                              ),
+                            ),
+                          ),
+                          QuickActionCard(
+                            icon: Icons.campaign_rounded,
+                            title: 'Announce',
+                            iconColor: Colors.cyan,
+                            cardColor: Colors.cyan.withOpacity(0.1),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AnnouncementsScreen(),
+                              ),
+                            ),
+                          ),
+                          QuickActionCard(
+                            icon: Icons.location_on_rounded,
+                            title: 'Intern Locations',
+                            iconColor: AppColors.statBlue,
+                            cardColor: AppColors.statBlue.withOpacity(0.1),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const InternLocationsScreen(),
+                              ),
+                            ),
+                          ),
+                          QuickActionCard(
+                            icon: Icons.event_available_rounded,
+                            title: 'Attendance',
+                            iconColor: Colors.indigo,
+                            cardColor: Colors.indigo.withOpacity(0.1),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MeetingAttendanceScreen(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Expandable Exports Button
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isExportsExpanded = !_isExportsExpanded;
+                          });
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Exports',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              Icon(
+                                _isExportsExpanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
                                 color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const Text(
-                              'Administrator',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildSectionHeader(
-                    'Intern Management',
-                    'Monitor and manage intern logbook submissions',
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Stats Cards - Responsive layout using MediaQuery
-                  if (provider.isLoading)
-                    const Center(child: CircularProgressIndicator())
-                  else
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final width = constraints.maxWidth;
-
-                        if (width < 400) {
-                          return Column(
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                child: StatCard(
-                                  label: 'Total Interns',
-                                  value: provider.totalInterns.toString(),
-                                  icon: Icons.groups_rounded,
-                                  iconColor: AppColors.statBlue,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: StatCard(
-                                  label: 'Submitted Today',
-                                  value: provider.submittedInterns.toString(),
-                                  icon: Icons.check_circle_rounded,
-                                  iconColor: AppColors.statGreen,
-                                  valueColor: AppColors.statGreen,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: StatCard(
-                                  label: 'Overdue',
-                                  value: provider.overdueInterns.toString(),
-                                  icon: Icons.warning_rounded,
-                                  iconColor: AppColors.statOrange,
-                                  valueColor: AppColors.danger,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: StatCard(
-                                  label: 'Total Records',
-                                  value: provider.totalRecords.toString(),
-                                  icon: Icons.list_alt_rounded,
-                                  iconColor: AppColors.statPurple,
-                                  valueColor: AppColors.statPurple,
-                                ),
+                                size: 18,
                               ),
                             ],
-                          );
-                        } else {
-                          return GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: width > 1200
-                                ? 4
-                                : (width > 800 ? 3 : 2),
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: width > 800 ? 1.2 : 1.0,
-                            children: [
-                              StatCard(
-                                label: 'Total Interns',
-                                value: provider.totalInterns.toString(),
-                                icon: Icons.groups_rounded,
-                                iconColor: AppColors.statBlue,
-                              ),
-                              StatCard(
-                                label: 'Submitted Today',
-                                value: provider.submittedInterns.toString(),
-                                icon: Icons.check_circle_rounded,
-                                iconColor: AppColors.statGreen,
-                                valueColor: AppColors.statGreen,
-                              ),
-                              StatCard(
-                                label: 'Overdue',
-                                value: provider.overdueInterns.toString(),
-                                icon: Icons.warning_rounded,
-                                iconColor: AppColors.statOrange,
-                                valueColor: AppColors.danger,
-                              ),
-                              StatCard(
-                                label: 'Total Records',
-                                value: provider.totalRecords.toString(),
-                                icon: Icons.list_alt_rounded,
-                                iconColor: AppColors.statPurple,
-                                valueColor: AppColors.statPurple,
-                              ),
-                            ],
-                          );
-                        }
-                      },
-                    ),
-                  const SizedBox(height: 24),
-
-                  // Quick Actions Section
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x08000000),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Quick Actions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                      ),
 
-                        // Responsive Quick Actions Grid (same pattern as Exports)
-                        GridView.count(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount:
-                              MediaQuery.of(context).size.width < 400
-                              ? 1
-                              : (MediaQuery.of(context).size.width < 600
-                                    ? 2
-                                    : (MediaQuery.of(context).size.width < 900
-                                          ? 3
-                                          : 4)),
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio:
-                              MediaQuery.of(context).size.width < 400
-                              ? 1.8
-                              : (MediaQuery.of(context).size.width < 600
-                                    ? 0.8
-                                    : (MediaQuery.of(context).size.width < 900
-                                          ? 0.7
-                                          : 0.6)),
-                          children: [
-                            QuickActionCard(
-                              icon: Icons.calendar_month_rounded,
-                              title: 'Daily Records',
-                              subtitle: 'All intern records',
-                              iconColor: AppColors.iconGreen,
-                              cardColor: AppColors.cardGreenTint,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const DailyRecordsScreen(),
-                                ),
-                              ),
-                            ),
-                            QuickActionCard(
-                              icon: Icons.directions_run_rounded,
-                              title: 'Leave Requests',
-                              subtitle: 'Manage short leave requests',
-                              iconColor: AppColors.iconPurple,
-                              cardColor: AppColors.cardPurpleTint,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ShortLeaveScreen(),
-                                ),
-                              ),
-                            ),
-                            QuickActionCard(
-                              icon: Icons.access_time_rounded,
-                              title: 'Overdue List',
-                              subtitle: 'View overdue interns',
-                              iconColor: AppColors.iconOrange,
-                              cardColor: AppColors.cardYellowTint,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const OverdueListScreen(),
-                                ),
-                              ),
-                            ),
-                            QuickActionCard(
-                              icon: Icons.chair_rounded,
-                              title: 'Seat Layout',
-                              subtitle: 'Manage seating arrangements',
-                              iconColor: AppColors.iconPink,
-                              cardColor: AppColors.cardPinkTint,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const SeatManagementScreen(),
-                                ),
-                              ),
-                            ),
-                            QuickActionCard(
-                              icon: Icons.announcement_rounded,
-                              title: 'Announcements',
-                              subtitle: 'Important notices and updates',
-                              iconColor: AppColors.iconBlue,
-                              cardColor: AppColors.cardBlueTint,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const AnnouncementsScreen(),
-                                ),
-                              ),
-                            ),
-                            QuickActionCard(
-                              icon: Icons.location_on_rounded,
-                              title: 'Intern Locations',
-                              subtitle: 'View intern locations map',
-                              iconColor: const Color(0xFF0891B2),
-                              cardColor: const Color(0xFFECFEFF),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const InternLocationsScreen(),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Exports Section
-                        const Divider(color: AppColors.border),
+                      // Expanded Exports Options
+                      if (_isExportsExpanded) ...[
                         const SizedBox(height: 16),
-                        const Text(
-                          'Exports',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        GridView.count(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount:
-                              MediaQuery.of(context).size.width < 400
-                              ? 1
-                              : (MediaQuery.of(context).size.width < 600
-                                    ? 2
-                                    : 3),
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio:
-                              MediaQuery.of(context).size.width < 400
-                              ? 1.8
-                              : 0.6,
+                        Row(
                           children: [
-                            QuickActionCard(
-                              icon: Icons.upload_file_rounded,
-                              title: 'Export Submissions List',
-                              subtitle: 'Export submissions with date range',
-                              iconColor: const Color(0xFF4F46E5),
-                              cardColor: const Color(0xFFEEF2FF),
-                              onTap: () => _showExportDialog(
-                                'Export Submissions List',
-                                ExportType.submissions,
+                            Expanded(
+                              child: _buildExportMiniCard(
+                                title: 'Submissions',
+                                icon: Icons
+                                    .description_rounded, // Similar to excel
+                                iconColor: AppColors.statGreen,
+                                bgColor: AppColors.statGreen.withOpacity(0.1),
+                                onTap: () => _showExportDialog(
+                                  'Export Submissions List',
+                                  ExportType.submissions,
+                                ),
                               ),
                             ),
-                            QuickActionCard(
-                              icon: Icons.upload_file,
-                              title: 'Export Non Submissions List',
-                              subtitle: 'Trigger Excel report to email',
-                              iconColor: const Color(0xFFDC2626),
-                              cardColor: const Color(0xFFFEE2E2),
-                              onTap: () => _performExport(
-                                ExportType.nonSubmissions,
-                                null,
-                                null,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildExportMiniCard(
+                                title: 'Non-Submissions',
+                                icon: Icons.download_rounded,
+                                iconColor: AppColors.danger,
+                                bgColor: AppColors.danger.withValues(alpha: 0.1),
+                                onTap: () => _performExport(
+                                  ExportType.nonSubmissions,
+                                  null,
+                                  null,
+                                ),
                               ),
                             ),
-                            QuickActionCard(
-                              icon: Icons.insert_drive_file_rounded,
-                              title: 'On Leave List',
-                              subtitle: 'Export list of interns on leave',
-                              iconColor: AppColors.iconTeal,
-                              cardColor: AppColors.cardTealTint,
-                              onTap: () => _performExport(
-                                ExportType.onLeave,
-                                null,
-                                null,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildExportMiniCard(
+                                title: 'On-Leave',
+                                icon: Icons.description_rounded,
+                                iconColor: AppColors.statPurple,
+                                bgColor: AppColors.statPurple.withOpacity(0.1),
+                                onTap: () => _performExport(
+                                  ExportType.onLeave,
+                                  null,
+                                  null,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
 
-                  // Search Section
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x08000000),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        isTablet
-                            ? Row(
-                                children: [
-                                  Expanded(child: _buildSearchField()),
-                                  const SizedBox(width: 12),
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      minWidth: 120,
-                                      maxWidth: 150,
-                                    ),
-                                    child: _buildStatusDropdown(provider),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      minWidth: 120,
-                                      maxWidth: 150,
-                                    ),
-                                    child: _buildSortDropdown(provider),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                children: [
-                                  _buildSearchField(),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildStatusDropdown(provider),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: _buildSortDropdown(provider),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                        const SizedBox(height: 20),
-                        _buildSearchContent(provider),
-                      ],
-                    ),
+                      const SizedBox(height: 24),
+
+                      // Search & Filter Fields
+                      _buildSearchField(),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(child: _buildStatusDropdown(provider)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _buildSortDropdown(provider)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Dynamic Search Results Content
+                      _buildSearchContent(provider),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           bottomNavigationBar: HomeBottomNavigationBar(
@@ -1167,13 +1005,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               setState(() {
                 _selectedIndex = index;
               });
-
               if (index == 1) {
-                // Navigate to TalentTrail Dashboard
                 context.go('/talenttrail-dashboard');
               }
-
-              if (index == 0) {}
             },
           ),
         );
@@ -1181,47 +1015,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Mini card for expanded exports
+  Widget _buildExportMiniCard({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: iconColor, size: 20),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSearchField() {
-    return TextField(
-      controller: _searchController,
-      onChanged: (value) => _searchInterns(value),
-      style: const TextStyle(fontSize: 14),
-      decoration: InputDecoration(
-        hintText: 'Search by name, Trainee ID, or email',
-        hintStyle: const TextStyle(fontSize: 12, color: AppColors.textHint),
-        prefixIcon: const Icon(
-          Icons.search,
-          size: 20,
-          color: AppColors.textHint,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => _searchInterns(value),
+        style: const TextStyle(fontSize: 13),
+        decoration: InputDecoration(
+          hintText: 'Search by name, trainee ID, or email (min 2 char)',
+          hintStyle: const TextStyle(fontSize: 12, color: AppColors.textHint),
+          prefixIcon: const Icon(
+            Icons.search,
+            size: 18,
+            color: AppColors.textHint,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    size: 16,
+                    color: AppColors.textHint,
+                  ),
+                  onPressed: _clearSearch,
+                )
+              : null,
         ),
-        filled: true,
-        fillColor: const Color(0xFFF8FAFC),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 13,
-        ),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(
-                  Icons.close,
-                  size: 18,
-                  color: AppColors.textHint,
-                ),
-                onPressed: _clearSearch,
-              )
-            : null,
       ),
     );
   }
@@ -1231,7 +1094,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
@@ -1240,13 +1103,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           value: _statusFilter,
           isExpanded: true,
           icon: const Icon(
-            Icons.filter_alt_outlined,
+            Icons.keyboard_arrow_down,
             size: 18,
             color: AppColors.textSecondary,
           ),
-          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
           items: _statusOptions
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .map(
+                (s) => DropdownMenuItem(
+                  value: s,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.filter_alt_outlined,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(s),
+                    ],
+                  ),
+                ),
+              )
               .toList(),
           onChanged: (v) {
             setState(() => _statusFilter = v!);
@@ -1262,7 +1144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
@@ -1271,13 +1153,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           value: _sortBy,
           isExpanded: true,
           icon: const Icon(
-            Icons.swap_vert,
+            Icons.keyboard_arrow_down,
             size: 18,
             color: AppColors.textSecondary,
           ),
-          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
           items: _sortOptions
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .map(
+                (s) => DropdownMenuItem(
+                  value: s,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.unfold_more_rounded,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(s),
+                    ],
+                  ),
+                ),
+              )
               .toList(),
           onChanged: (v) {
             setState(() => _sortBy = v!);
@@ -1308,131 +1209,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return _buildSearchResultsList(_searchResults);
     }
 
-    if (_searchController.text.isNotEmpty && _searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(36),
-              ),
-              child: const Icon(
-                Icons.search_off,
-                size: 36,
-                color: Color(0xFF94A3B8),
-              ),
+    // Default Empty State matching Image 5
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.search_rounded, size: 40, color: AppColors.textHint),
+          const SizedBox(height: 16),
+          const Text(
+            'Search for Interns',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'No results found',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Enter a name, trainee ID, or email to find specific interns and view their records.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Try searching with a different name or ID',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        const Text(
-          'Search for Interns',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Use the search bar above to find specific interns or select a filter option',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 32),
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(36),
-          ),
-          child: const Icon(Icons.search, size: 36, color: Color(0xFF94A3B8)),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'Search for Interns',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Enter a name, trainee ID, or email to find specific interns and view their records.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFBFDBFE)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.lightbulb_outline,
-                size: 16,
-                color: AppColors.statBlue,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: RichText(
-                  textAlign: TextAlign.center,
-                  text: const TextSpan(
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: 'Tip: ',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.statBlue,
-                        ),
-                      ),
-                      TextSpan(
-                        text:
-                            'Type at least 2 characters to start searching or use the filter dropdown to see all interns by status',
-                      ),
-                    ],
+            child: RichText(
+              textAlign: TextAlign.center,
+              text: const TextSpan(
+                style: TextStyle(fontSize: 11, color: AppColors.statBlue),
+                children: [
+                  TextSpan(
+                    text: '💡 Tip: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                ),
+                  TextSpan(
+                    text:
+                        'Type at least 2 characters to start searching or use the filter dropdown to see all interns by status',
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1448,11 +1278,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: AppColors.border),
+            side: const BorderSide(color: AppColors.border),
           ),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.primary.withOpacity(0.1),
               child: Text(
                 intern['name']?.substring(0, 1).toUpperCase() ?? '?',
                 style: const TextStyle(fontWeight: FontWeight.bold),
@@ -1460,13 +1290,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             title: Text(
               intern['name'] ?? 'Unknown',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
             subtitle: Text(
               intern['traineeId'] ?? 'ID: ${intern['id']}',
-              style: const TextStyle(fontSize: 12),
+              style: const TextStyle(fontSize: 11),
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(Icons.chevron_right, size: 20),
             onTap: () async {
               try {
                 final internDetails = await AdminApiService.fetchInternDetails(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:slt_internship_attendance_portal/features/admin/ui/talentTrail_dashboard_sidebar.dart';
-import 'package:slt_internship_attendance_portal/features/admin/api/talentTrail_admin_api.dart';
+import 'package:slt_internship_attendance_portal/features/admin/api/talent_trail_admin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:slt_internship_attendance_portal/core/services/api_service.dart';
 import 'dart:io';
@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:go_router/go_router.dart';
 
 class TalentTrailHomeScreen extends StatefulWidget {
   const TalentTrailHomeScreen({super.key});
@@ -24,7 +25,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
   final List<String> _exportOptions = ['All', 'Assigned', 'Unassigned'];
   bool _isExporting = false;
 
-  // Dashboard data
+  // Dashboard state variables
   bool isLoading = true;
   bool isRefreshing = false;
   String? error;
@@ -41,7 +42,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
   int pendingRepositoryInfo = 0;
   String lastActiveInternsUpdate = '';
 
-  // Project requests
+  // Project requests state
   List<dynamic> projectRequests = [];
   bool isLoadingRequests = false;
 
@@ -64,7 +65,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     });
 
     try {
-      // First, ensure we have a valid TalentTrail token
+      // Ensure we have a valid TalentTrail token
       final hasToken = await TalentTrailAuthService.isAuthenticated();
 
       if (!hasToken) {
@@ -79,7 +80,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
         isAuthenticating = false;
       });
 
-      // Now load the dashboard data
+      // Load the dashboard data after authentication
       await _loadAllDashboardData();
     } catch (e) {
       debugPrint('Authentication error: $e');
@@ -115,7 +116,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
 
   Future<void> _loadDashboardStats() async {
     try {
-      // Fetch all data in parallel with better error handling
+      // Fetch all data in parallel for better performance
       final results = await Future.wait([
         _safeApiCall(() => TalentTrailAdminService.getInternCount(), 0),
         _safeApiCall(() => TalentTrailAdminService.getActiveInternCount(), 0),
@@ -133,7 +134,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
         _safeApiCall(() => _getUnassignedInternsCount(), 0),
       ]);
 
-      // Fetch dashboard stats separately
+      // Fetch specific dashboard stats separately
       Map<String, dynamic> dashboardStats = {};
       try {
         dashboardStats = await TalentTrailAdminService.getDashboardStats();
@@ -167,7 +168,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     }
   }
 
-  // Safe API call wrapper
+  // Safe wrapper for API calls to prevent complete UI failure on single endpoint failure
   Future<T> _safeApiCall<T>(
     Future<T> Function() apiCall,
     T defaultValue,
@@ -186,13 +187,13 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
       final teamMembers =
           await TalentTrailAdminService.getTeamMemberAssociations();
 
-      // Get all intern IDs that are in teams
+      // Collect all intern IDs currently assigned to teams
       final assignedInternIds = teamMembers
           .map((tm) => tm['internId'] as int?)
           .where((id) => id != null)
           .toSet();
 
-      // Count unassigned interns
+      // Count interns not present in the assigned set
       return allInterns.where((intern) {
         final internId = intern['internId'] as int?;
         return internId != null && !assignedInternIds.contains(internId);
@@ -217,7 +218,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
       }
     } catch (e) {
       debugPrint('Error loading project requests: $e');
-      // Don't throw, just show empty list
+      // Do not throw, default to an empty list on failure
       if (mounted) {
         setState(() {
           projectRequests = [];
@@ -238,7 +239,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     });
 
     try {
-      // Re-authenticate if needed
+      // Verify token and re-authenticate if necessary
       final hasToken = await TalentTrailAuthService.isAuthenticated();
       if (!hasToken) {
         await TalentTrailAuthService.federatedLogin();
@@ -272,6 +273,40 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
         });
       }
     }
+  }
+
+  Widget _buildImportButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF0000CD), // Dark blue background
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0,
+        ),
+        onPressed: () {
+          // Placeholder for import functionality
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Import Data feature coming soon!'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        },
+        child: const Text(
+          'IMPORT DATA',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildExportDropdown() {
@@ -355,7 +390,9 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
                         'EXPORT DATA',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight
+                              .bold, // Updated to bold to match Import
+                          letterSpacing: 0.5,
                         ),
                       ),
                       const Spacer(),
@@ -386,7 +423,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     });
 
     try {
-      // Show loading dialog
+      // Display loading dialog to user
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -407,20 +444,18 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
         ),
       );
 
-      // Get all interns
+      // Fetch required data for export mapping
       final allInterns = await TalentTrailAdminService.getInterns();
       final List<dynamic> internsList = allInterns;
 
-      // Get team memberships
       final teamMembershipsRaw =
           await TalentTrailAdminService.getTeamMemberAssociations();
       final List<dynamic> teamMemberships = teamMembershipsRaw;
 
-      // Get all projects
       final allProjectsRaw = await TalentTrailAdminService.getProjects();
       final List<dynamic> allProjects = allProjectsRaw;
 
-      // Create a map of intern ID to their assigned teams and projects
+      // Construct intern data map
       final Map<int, Map<String, dynamic>> internData = {};
 
       for (var intern in internsList) {
@@ -439,7 +474,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
         }
       }
 
-      // Process team memberships to find assigned interns
+      // Map team memberships and assigned projects
       final Set<int> assignedInternIds = {};
 
       for (var membership in teamMemberships) {
@@ -451,7 +486,6 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
           if (internId != null && internData.containsKey(internId)) {
             assignedInternIds.add(internId);
 
-            // Add team name
             if (teamName.isNotEmpty) {
               final teamNames = List<String>.from(
                 internData[internId]!['team_name'],
@@ -461,7 +495,6 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
               }
             }
 
-            // Find projects assigned to this team
             if (teamId != null) {
               final teamProjects = allProjects.where((project) {
                 if (project is Map<String, dynamic>) {
@@ -491,14 +524,14 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
         }
       }
 
-      // Update status for assigned interns
+      // Apply assigned status
       for (var internId in assignedInternIds) {
         if (internData.containsKey(internId)) {
           internData[internId]!['status'] = 'Assigned';
         }
       }
 
-      // Filter based on export option
+      // Filter dataset based on selected dropdown option
       List<Map<String, dynamic>> exportList = [];
 
       switch (_exportOption) {
@@ -517,17 +550,13 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
           break;
       }
 
-      // Prepare CSV data
+      // Format data and trigger download
       final exportData = await _prepareExportData(exportList);
-
-      // Generate CSV file
       final csvString = await _generateCSV(exportData);
-
-      // Save and open file
       await _saveAndOpenCSV(csvString);
 
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -540,7 +569,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     } catch (e) {
       debugPrint('Export error: $e');
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -559,7 +588,6 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     }
   }
 
-  // Fixed _prepareExportData method
   Future<List<Map<String, dynamic>>> _prepareExportData(
     List<Map<String, dynamic>> data,
   ) async {
@@ -569,9 +597,8 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
       final teamNames = List<String>.from(item['team_name'] ?? []);
       final projectNames = List<String>.from(item['project_name'] ?? []);
 
-      // If intern has multiple teams/projects, create multiple rows
       if (teamNames.isEmpty && projectNames.isEmpty) {
-        // No teams or projects - single row
+        // Single row for interns with no associations
         formattedData.add({
           'intern_code': item['intern_code']?.toString() ?? '',
           'name': item['name']?.toString() ?? '',
@@ -581,7 +608,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
           'status': item['status']?.toString() ?? 'Unassigned',
         });
       } else if (teamNames.isNotEmpty && projectNames.isEmpty) {
-        // Has teams but no projects - one row per team
+        // Row for each associated team
         for (var team in teamNames) {
           formattedData.add({
             'intern_code': item['intern_code']?.toString() ?? '',
@@ -593,7 +620,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
           });
         }
       } else if (teamNames.isEmpty && projectNames.isNotEmpty) {
-        // Has projects but no teams - one row per project
+        // Row for each associated project
         for (var project in projectNames) {
           formattedData.add({
             'intern_code': item['intern_code']?.toString() ?? '',
@@ -605,7 +632,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
           });
         }
       } else {
-        // Has both teams and projects - create rows for each combination
+        // Cartesian product rows for both teams and projects
         for (var team in teamNames) {
           for (var project in projectNames) {
             formattedData.add({
@@ -624,13 +651,11 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     return formattedData;
   }
 
-  // Fixed _generateCSV method
   Future<String> _generateCSV(List<Map<String, dynamic>> data) async {
     if (data.isEmpty) {
       return 'intern_code,name,email,team_name,project_name,status\nNo data available,,,,,';
     }
 
-    // Define headers
     final headers = [
       'intern_code',
       'name',
@@ -640,18 +665,17 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
       'status',
     ];
 
-    // Create CSV rows
     final StringBuffer csvBuffer = StringBuffer();
 
-    // Add headers
+    // Insert headers
     csvBuffer.writeln(headers.join(','));
 
-    // Add data rows
+    // Insert data row by row
     for (var row in data) {
       final List<String> values = [];
       for (var header in headers) {
         var value = row[header]?.toString() ?? '';
-        // Escape quotes and wrap in quotes if contains comma
+        // Ensure CSV safety by escaping quotes
         if (value.contains(',') ||
             value.contains('"') ||
             value.contains('\n')) {
@@ -665,7 +689,6 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     return csvBuffer.toString();
   }
 
-  // Fixed _saveAndOpenCSV method
   Future<void> _saveAndOpenCSV(String csvString) async {
     try {
       final directory = await _getDownloadDirectory();
@@ -679,7 +702,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
       final File file = File(filePath);
       await file.writeAsString(csvString, encoding: utf8);
 
-      // Open the file
+      // Trigger native file opening
       await OpenFile.open(filePath);
     } catch (e) {
       debugPrint('Error saving file: $e');
@@ -690,18 +713,18 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
   Future<Directory> _getDownloadDirectory() async {
     try {
       if (Platform.isAndroid) {
-        // Request storage permission
+        // Request storage permission for Android
         if (await Permission.storage.request().isGranted) {
-          // Get the Downloads folder path for Android
           final downloadsDir = Directory('/storage/emulated/0/Download');
           if (await downloadsDir.exists()) {
             return downloadsDir;
           }
 
-          // Alternative way using getExternalStorageDirectory
+          // Fallback mechanism for Android storage
           final externalDir = await getExternalStorageDirectory();
           if (externalDir != null) {
-            final downloadsPath = '${externalDir.path.split('Android')[0]}Download';
+            final downloadsPath =
+                '${externalDir.path.split('Android')[0]}Download';
             final fallbackDir = Directory(downloadsPath);
             if (!await fallbackDir.exists()) {
               await fallbackDir.create(recursive: true);
@@ -710,8 +733,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
           }
         }
       } else if (Platform.isIOS) {
-        // On iOS, use the documents directory
-        // iOS doesn't have a direct Downloads folder access
+        // Fallback to Documents directory for iOS sandboxing
         final documentsDir = await getApplicationDocumentsDirectory();
         final downloadsDir = Directory('${documentsDir.path}/Downloads');
         if (!await downloadsDir.exists()) {
@@ -719,14 +741,13 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
         }
         return downloadsDir;
       } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-        // For desktop platforms
         final downloadsDir = await getDownloadsDirectory();
         if (downloadsDir != null && await downloadsDir.exists()) {
           return downloadsDir;
         }
       }
 
-      // Fallback to application documents directory
+      // Final fallback
       return await getApplicationDocumentsDirectory();
     } catch (e) {
       debugPrint('Error getting download directory: $e');
@@ -738,6 +759,20 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // The newly added back navigation button
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/');
+            }
+          },
+        ),
         automaticallyImplyLeading: false,
         elevation: 0,
         toolbarHeight: 70,
@@ -754,27 +789,23 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
             ),
           ),
         ),
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/images/TalentTrail_logo.png',
-              height: 40,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(
-                  Icons.analytics,
-                  size: 40,
-                  color: Colors.white,
-                );
-              },
-            ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.menu, size: 30, color: Colors.white),
-              onPressed: () => setState(() => isSidebarOpen = true),
-            ),
-          ],
+        // Title configuration
+        title: Image.asset(
+          'assets/images/TalentTrail_logo.png',
+          height: 40,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(Icons.analytics, size: 40, color: Colors.white);
+          },
         ),
+        // Actions configuration containing the hamburger menu
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu, size: 30, color: Colors.white),
+            onPressed: () => setState(() => isSidebarOpen = true),
+          ),
+          const SizedBox(width: 8), // Added subtle padding for aesthetics
+        ],
       ),
       body: Stack(
         children: [
@@ -829,7 +860,12 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
             style: TextStyle(color: Colors.white70, fontSize: 18),
           ),
           const SizedBox(height: 30),
-          const SizedBox(height: 25),
+
+          // Added the Import Data Button
+          _buildImportButton(),
+          const SizedBox(height: 12),
+
+          // Existing Export Dropdown
           _buildExportDropdown(),
         ],
       ),
@@ -924,7 +960,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
                   gradient: const [Color(0xFFEF9A9A), Color(0xFFE57373)],
                   iconBg: const Color(0xFFC62828),
                   icon: LucideIcons.userX,
-                  number: '80',
+                  number: '80', // Example placeholder
                   label: "UNASSIGNED INTERNS",
                   textColor: const Color(0xFFB71C1C),
                 ),
@@ -987,7 +1023,6 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     );
   }
 
-
   Widget _refreshButton() {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
@@ -1049,7 +1084,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
     final padding = isSmallScreen ? 12.0 : 20.0;
 
     return Container(
-      width: double.infinity, // This ensures full width
+      width: double.infinity,
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: gradient),
@@ -1231,7 +1266,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
       children: projectRequests.map((request) {
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
-          width: double.infinity, // Takes full width
+          width: double.infinity,
           child: Card(
             elevation: 2,
             shape: RoundedRectangleBorder(
@@ -1239,7 +1274,6 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
             ),
             child: InkWell(
               onTap: () {
-                // Handle tap to view request details
                 _showRequestDetails(request);
               },
               borderRadius: BorderRadius.circular(12),
@@ -1248,7 +1282,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header row with project name and status
+                    // Header identifying the project request
                     Row(
                       children: [
                         Container(
@@ -1307,10 +1341,8 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Request details
+                    // Specific details regarding the request
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -1350,10 +1382,8 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Action buttons
+                    // Action controls for approval/rejection
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -1483,7 +1513,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
           'APPROVED',
         );
       }
-      
+
       if (mounted) {
         setState(() {
           projectRequests.remove(request);
@@ -1517,7 +1547,7 @@ class _TalentTrailHomeScreenState extends State<TalentTrailHomeScreen> {
           'REJECTED',
         );
       }
-      
+
       if (mounted) {
         setState(() {
           projectRequests.remove(request);

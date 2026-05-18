@@ -106,6 +106,7 @@ class _OverdueListScreenState extends State<OverdueListScreen> {
       await file.writeAsString(csvContent);
 
       // Share the file
+      // ignore: deprecated_member_use
       await Share.shareXFiles([
         XFile(filePath),
       ], text: 'Overdue Interns List - ${_filteredInterns.length} interns');

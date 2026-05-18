@@ -271,7 +271,10 @@ class TalentTrailAdminService {
   }
 
   // Update project request status
-  static Future<void> updateProjectRequestStatus(int requestId, String status) async {
+  static Future<void> updateProjectRequestStatus(
+    int requestId,
+    String status,
+  ) async {
     final body = jsonEncode({'status': status});
     final response = await TalentTrailApiServices.put(
       '/project-requests/$requestId/status',

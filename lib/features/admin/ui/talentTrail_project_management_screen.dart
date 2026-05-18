@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:slt_internship_attendance_portal/features/admin/ui/talentTrail_dashboard_sidebar.dart';
-import 'package:slt_internship_attendance_portal/features/admin/api/talentTrail_admin_api.dart';
+import 'package:slt_internship_attendance_portal/features/admin/api/talent_trail_admin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
